@@ -3,6 +3,7 @@ use ::std::{io::Write, net::TcpStream};
 use std::net::TcpListener;
 use std::{
     collections::HashMap,
+    fs,
     io::{BufRead, BufReader},
     thread,
 };
@@ -73,6 +74,17 @@ fn handle_requset(mut stream: TcpStream) {
             status_line = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:{length} \r\n\r\n{main_content}"
             );
+        } else if content.starts_with("/files") {
+            let path = content.strip_prefix("/files/").unwrap();
+            let path = format!("/tmp/{path}");
+            let main_content = fs::read_to_string(path);
+            match main_content {
+                Ok(file) => {
+                    let length = file.as_bytes().len();
+                    status_line = format!("HTTP/1.1 200 OK\r\nContent-Type: application/octet-stream\r\nContent-Length: {length}\r\n\r\n{file}")
+                }
+                Err(e) => status_line = format!("HTTP/1.1 404 Not Found\r\n\r\n"),
+            }
         } else if content.len() == 1 {
             status_line = format!("HTTP/1.1 200 OK\r\n\r\n");
         } else {
