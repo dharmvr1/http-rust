@@ -1,7 +1,10 @@
 use ::std::{io::Write, net::TcpStream};
-use std::io::{BufRead, BufReader};
 #[allow(unused_imports)]
 use std::net::TcpListener;
+use std::{
+    collections::HashMap,
+    io::{BufRead, BufReader},
+};
 
 fn main() {
     let listener = TcpListener::bind("127.0.0.1:4221").unwrap();
@@ -26,32 +29,52 @@ fn main() {
 
 // }
 
-fn handle_requset(mut stream: TcpStream) {
-     let status_line : String;
-    let reader = BufReader::new(&stream);
+fn handle_requset( mut  stream: TcpStream) {
 
-    // println!("{:?}",reader);
-    let request = reader.lines().next().unwrap().unwrap();
-    let parts: Vec<&str> = request.split_whitespace().collect();
-    println!("{:?}", parts);
+    let mut reader = BufReader::new(&stream);
+    let mut request_line = String::new();
+    reader.read_line(&mut request_line).unwrap();
 
-    //    let status_line;
+    let request_line = request_line.trim_end();
+
+    let parts: Vec<&str> = request_line.split_whitespace().collect();
+
+    let mut headers = HashMap::new();
+    loop {
+        let mut line = String::new();
+        reader.read_line(&mut line).unwrap();
+        let line = line.trim_end();
+        if line.is_empty() {
+            break;
+        }
+        if let Some((name, value)) = line.split_once(":") {
+            headers.insert(name.trim().to_string(), value.trim().to_string());
+        }
+    }
+
+    println!("{:?}",headers);
+
+    
+
+       let status_line;
 
     if parts.len() > 2 {
         let content = parts[1];
-       
-   
 
         if content.starts_with("/echo") {
             let main_content = content.strip_prefix("/echo/").unwrap();
             println!("{}",main_content);
-            
+
            let length = main_content.len();
              status_line = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:{length} \r\n\r\n{main_content}"
             );
-        }else if content.len()==1 {
-             status_line = format!("HTTP/1.1 200 OK\r\n\r\n");
+        }else if content.starts_with("/user-agent") {
+            let main_content = headers.get("User-Agent").unwrap();
+            let length = main_content.len();
+              status_line = format!(
+                "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:{length} \r\n\r\n{main_content}"
+            );
 
         }else {
                      status_line = format!("HTTP/1.1 404 Not Found\r\n\r\n");
@@ -63,10 +86,4 @@ fn handle_requset(mut stream: TcpStream) {
 
        }
     }
-
-   
-
-    
-
-      
 }
