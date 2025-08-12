@@ -76,7 +76,10 @@ fn handle_requset( mut  stream: TcpStream) {
                 "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:{length} \r\n\r\n{main_content}"
             );
 
-        }else {
+        }else if content.len()==1 {
+            status_line =format!("HTTP/1.1 200 OK\r\n\r\n");
+        }
+        else {
                      status_line = format!("HTTP/1.1 404 Not Found\r\n\r\n");
 
         }
