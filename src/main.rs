@@ -2,10 +2,7 @@ use ::std::{io::Write, net::TcpStream};
 #[allow(unused_imports)]
 use std::net::TcpListener;
 use std::{
-    collections::HashMap,
-    fs,
-    io::{BufRead, BufReader},
-    thread,
+    collections::HashMap, env, fs, io::{BufRead, BufReader}, thread
 };
 
 fn main() {
@@ -34,6 +31,11 @@ fn main() {
 fn handle_requset(mut stream: TcpStream) {
     let mut reader = BufReader::new(&stream);
     let mut request_line = String::new();
+   
+    let argv = env::args().collect::<Vec<String>>();
+
+    let dir =argv[2].clone();
+
     reader.read_line(&mut request_line).unwrap();
 
     let request_line = request_line.trim_end();
@@ -76,7 +78,7 @@ fn handle_requset(mut stream: TcpStream) {
             );
         } else if content.starts_with("/files") {
             let path = content.strip_prefix("/files/").unwrap();
-            let path = format!("/tmp/{path}");
+            let path = format!("{dir}{path}");
             let main_content = fs::read_to_string(path);
             match main_content {
                 Ok(file) => {
