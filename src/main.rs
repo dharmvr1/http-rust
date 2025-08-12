@@ -4,6 +4,7 @@ use std::net::TcpListener;
 use std::{
     collections::HashMap,
     io::{BufRead, BufReader},
+    thread,
 };
 
 fn main() {
@@ -13,7 +14,7 @@ fn main() {
         match stream {
             Ok(stream) => {
                 // println!("accepted new connection");
-                handle_requset(stream);
+                thread::spawn(|| handle_requset(stream));
                 println!("response send")
             }
             Err(e) => {
@@ -29,8 +30,7 @@ fn main() {
 
 // }
 
-fn handle_requset( mut  stream: TcpStream) {
-
+fn handle_requset(mut stream: TcpStream) {
     let mut reader = BufReader::new(&stream);
     let mut request_line = String::new();
     reader.read_line(&mut request_line).unwrap();
@@ -52,41 +52,35 @@ fn handle_requset( mut  stream: TcpStream) {
         }
     }
 
-    println!("{:?}",headers);
+    println!("{:?}", headers);
 
-    
-
-       let status_line;
+    let status_line;
 
     if parts.len() > 2 {
         let content = parts[1];
 
         if content.starts_with("/echo") {
             let main_content = content.strip_prefix("/echo/").unwrap();
-            println!("{}",main_content);
+            println!("{}", main_content);
 
-           let length = main_content.len();
-             status_line = format!(
+            let length = main_content.len();
+            status_line = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:{length} \r\n\r\n{main_content}"
             );
-        }else if content.starts_with("/user-agent") {
+        } else if content.starts_with("/user-agent") {
             let main_content = headers.get("User-Agent").unwrap();
             let length = main_content.len();
-              status_line = format!(
+            status_line = format!(
                 "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nContent-Length:{length} \r\n\r\n{main_content}"
             );
-
-        }else if content.len()==1 {
-            status_line =format!("HTTP/1.1 200 OK\r\n\r\n");
+        } else if content.len() == 1 {
+            status_line = format!("HTTP/1.1 200 OK\r\n\r\n");
+        } else {
+            status_line = format!("HTTP/1.1 404 Not Found\r\n\r\n");
         }
-        else {
-                     status_line = format!("HTTP/1.1 404 Not Found\r\n\r\n");
-
+        match stream.write_all(status_line.as_bytes()) {
+            Ok(_) => (),
+            Err(e) => println!("could not send respond:{:?}", e),
         }
-         match stream.write_all(status_line.as_bytes()) {
-        Ok(_)=>(),
-        Err(e)=>println!("could not send respond:{:?}",e)
-
-       }
     }
 }
