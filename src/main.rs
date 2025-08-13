@@ -78,7 +78,7 @@ fn handle_requset(mut stream: TcpStream) {
             );
         } else if content.starts_with("/files") {
             let path = content.strip_prefix("/files/").unwrap();
-            let path = format!("/tmp/{path}");
+            let path = format!("/tmp/data/codecrafters.io/http-server-tester/{path}");
             let main_content = fs::read_to_string(path);
             match main_content {
                 Ok(file) => {
