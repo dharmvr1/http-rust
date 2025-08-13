@@ -104,7 +104,11 @@ fn handle_requset(mut stream: TcpStream) {
                     "from post: method ,request_body  {},{} ,{} ",
                     method, request_body, path
                 );
-                match fs::write(path, request_body.to_string()) {
+
+                let off_path  = "/tmp/data/codecrafters.io/http-server-tester/";
+
+                let main_path = format!("{off_path}{path}");
+                match fs::write(main_path, request_body.to_string()) {
                     Ok(_) => {
                         status_line = format!("HTTP/1.1 201 Created\r\n\r\n");
                         println!(" from_write :{}", status_line)
