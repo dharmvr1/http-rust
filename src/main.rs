@@ -37,9 +37,9 @@ fn handle_requset(mut stream: TcpStream) {
     println!("{:?}",argv);
 
     reader.read_line(&mut request_line).unwrap();
-
+  
     let request_line = request_line.trim_end();
-
+    println!("{}",request_line);
     let parts: Vec<&str> = request_line.split_whitespace().collect();
 
     let mut headers = HashMap::new();
@@ -55,12 +55,26 @@ fn handle_requset(mut stream: TcpStream) {
         }
     }
 
+    let mut  request_body = String::new();
+    reader.read_line(&mut request_body ).unwrap();
+
+    println!("{}",request_body);
+
     println!("{:?}", headers);
 
     let status_line;
 
     if parts.len() > 2 {
         let content = parts[1];
+        let method = parts[0];
+        
+        
+
+
+
+
+
+
 
         if content.starts_with("/echo") {
             let main_content = content.strip_prefix("/echo/").unwrap();
@@ -78,7 +92,19 @@ fn handle_requset(mut stream: TcpStream) {
             );
         } else if content.starts_with("/files") {
             let path = content.strip_prefix("/files/").unwrap();
-            let path = format!("/tmp/data/codecrafters.io/http-server-tester/{path}");
+          
+          if method =="POST"{
+
+              println!("form post:{},{} ,{} ",method,request_body,path);
+             match fs::write(path, request_body.to_string()) {
+                Ok(_)=> status_line = format!("HTTP/1.1 201 Created\r\n\r\n"),
+                Err(_)=>status_line = format!("HTTP/1.1 404 Not Creates\r\n\r\n")
+             };
+            
+          
+
+           }else {
+                let path = format!("/tmp/data/codecrafters.io/http-server-tester/{path}");
             let main_content = fs::read_to_string(path);
             match main_content {
                 Ok(file) => {
@@ -87,6 +113,10 @@ fn handle_requset(mut stream: TcpStream) {
                 }
                 Err(e) => status_line = format!("HTTP/1.1 404 Not Found\r\n\r\n"),
             }
+           }
+
+            
+           
         } else if content.len() == 1 {
             status_line = format!("HTTP/1.1 200 OK\r\n\r\n");
         } else {
